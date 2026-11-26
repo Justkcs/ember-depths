@@ -102,6 +102,7 @@ public class ConsoleUI implements GameEventListener {
         out.println("    Defensive (less damage, more defense). Switching style is a free action.");
         out.println("  - Each class has a unique skill that costs mana.");
         out.println("  - Save outside of combat. Your best runs are kept in the Hall of Fame.");
+        out.println("  - Prefer graphics? Start the game with the --gui option for the window version.");
     }
 
     private void startNewGame() {
