@@ -1,0 +1,214 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide empty members
+
+package domain {
+  abstract class Creature {
+    - name : String
+    - maxHealth : int
+    - health : int
+    - attack : int
+    - defense : int
+    + receiveDamage(raw : int) : int
+    + receiveTrueDamage(raw : int) : int
+    + heal(amount : int) : int
+    + isAlive() : boolean
+    # getEffectiveDefense() : int
+    + {abstract} getTypeName() : String
+  }
+  class GameState {
+    - monstersDefeated : int
+    - bossDefeated : boolean
+    + recordMonsterDefeated(m : Monster)
+  }
+  class ScoreEntry implements Comparable {
+    - heroName : String
+    - heroClass : String
+    - level : int
+    - floor : int
+    - score : int
+    - victory : boolean
+    + compareTo(o : ScoreEntry) : int
+    + toLine() : String
+    + {static} fromLine(line : String) : ScoreEntry
+  }
+}
+
+package domain.hero {
+  abstract class Hero {
+    - level : int
+    - experience : int
+    - gold : int
+    - mana : int
+    - maxMana : int
+    + rollAttackDamage(r : Random) : int
+    + useSkill(t : Creature, r : Random) : SkillResult
+    # {abstract} performSkill(t : Creature, r : Random) : SkillResult
+    # {abstract} applyLevelUpBonus()
+    + getFleeChance() : int
+    + gainExperience(xp : int) : int
+    + setStrategy(s : AttackStrategy)
+  }
+  class Warrior
+  class Mage
+  class Rogue
+  enum HeroClass { WARRIOR
+ MAGE
+ ROGUE }
+}
+
+package domain.monster {
+  abstract class Monster {
+    - experienceReward : int
+    - goldReward : int
+    + {abstract} attack(h : Hero, r : Random) : AttackOutcome
+    + isBoss() : boolean
+  }
+  class Goblin
+  class Skeleton
+  class Orc
+  class Dragon {
+    - turnCounter : int
+  }
+}
+
+package domain.item {
+  abstract class Item {
+    - name : String
+    - value : int
+    + {abstract} use(h : Hero) : String
+  }
+  class HealthPotion
+  class ManaPotion
+  class StrengthElixir
+  class "Inventory<T extends Item>" as Inventory {
+    - capacity : int
+    - items : ArrayList<T>
+    + add(item : T)
+    + removeAt(i : int) : T
+    + sort(c : Comparator<? super T>)
+  }
+}
+
+package domain.world {
+  class Dungeon {
+    - rooms : ArrayList<Room>
+    - currentIndex : int
+    + advance() : Room
+    + hasNextRoom() : boolean
+  }
+  class Room {
+    - floor : int
+    - number : int
+    - type : RoomType
+    - gold : int
+  }
+}
+
+package strategy {
+  interface AttackStrategy {
+    + calculateDamage(atk : int, r : Random) : int
+    + adjustDefense(def : int) : int
+  }
+  class BalancedStrategy
+  class AggressiveStrategy
+  class DefensiveStrategy
+}
+
+package factory {
+  class GameFactory
+  class HeroFactory
+  class MonsterFactory
+  class ItemFactory
+  class DungeonFactory
+}
+
+package service {
+  class GameService {
+    - currentEnemy : Monster
+    + enterNextRoom() : Room
+    + attack()
+    + useSkill()
+    + useItem(i : int) : Item
+    + flee() : boolean
+  }
+  class ScoreService
+  interface GameEventListener {
+    + onEvent(e : GameEvent)
+  }
+}
+
+package persistence {
+  interface GameRepository
+  class SerializedGameRepository
+  interface ScoreRepository
+  class TextScoreRepository
+}
+
+package ui {
+  class ConsoleUI
+  class ConsoleInput
+}
+
+package gui {
+  class GameWindow
+  class MenuPanel
+  class CreateHeroPanel
+  class GamePanel
+  class ScenePanel
+  class LeaderboardPanel
+  class SpriteRenderer {
+    + {static} drawHero(g : Graphics2D, c : HeroClass, ...)
+    + {static} drawMonster(g : Graphics2D, m : Monster, ...)
+  }
+}
+
+GameEventListener <|.. GamePanel
+GameWindow *-- MenuPanel
+GameWindow *-- CreateHeroPanel
+GameWindow *-- GamePanel
+GameWindow *-- LeaderboardPanel
+GamePanel *-- ScenePanel
+GamePanel --> GameService
+ScenePanel ..> SpriteRenderer
+GameWindow --> GameFactory
+ConsoleUI --> GameFactory
+GameFactory --> DungeonFactory
+
+Creature <|-- Hero
+Creature <|-- Monster
+Hero <|-- Warrior
+Hero <|-- Mage
+Hero <|-- Rogue
+Monster <|-- Goblin
+Monster <|-- Skeleton
+Monster <|-- Orc
+Monster <|-- Dragon
+Item <|-- HealthPotion
+Item <|-- ManaPotion
+Item <|-- StrengthElixir
+AttackStrategy <|.. BalancedStrategy
+AttackStrategy <|.. AggressiveStrategy
+AttackStrategy <|.. DefensiveStrategy
+GameRepository <|.. SerializedGameRepository
+ScoreRepository <|.. TextScoreRepository
+GameEventListener <|.. ConsoleUI
+
+Hero "1" *-- "1" Inventory
+Inventory "1" o-- "0..8" Item
+Hero "1" --> "1" AttackStrategy
+GameState "1" *-- "1" Hero
+GameState "1" *-- "1" Dungeon
+Dungeon "1" *-- "1..*" Room
+Room "1" o-- "0..1" Monster
+Room "1" o-- "0..1" Item
+GameService --> GameState
+GameService --> "0..*" GameEventListener
+ScoreService --> ScoreRepository
+ConsoleUI --> GameService
+ConsoleUI --> ScoreService
+ConsoleUI --> GameRepository
+ConsoleUI --> ConsoleInput
+DungeonFactory --> MonsterFactory
+DungeonFactory --> ItemFactory
+@enduml
